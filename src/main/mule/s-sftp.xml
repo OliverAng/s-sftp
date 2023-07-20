@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="27a086fc-2e47-4a45-b096-b36b9598d019" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<sftp:config name="SFTP_Config" doc:name="SFTP Config" doc:id="ec627461-f998-42b1-8186-c0a07281df4b" >
+		<sftp:connection host="192.168.88.99" port="2222" username="tester" password="password" />
+	</sftp:config>
+	<flow name="s-sftpFlow" doc:id="6aaffae7-be6c-4ce1-9a4a-09621bb87b2b" >
+		<http:listener doc:name="GET /test1" doc:id="b732b89c-6e62-4198-8243-bcf0522c2203" config-ref="HTTP_Listener_config" path="/test1"/>
+		<sftp:list doc:name="List" doc:id="ae13008b-24f4-4e7a-b265-5e9718ab775f" config-ref="SFTP_Config" directoryPath="/"/>
+		<sftp:read doc:name="Read" doc:id="7e157846-b67f-484e-979a-81f5924594bd" config-ref="SFTP_Config" path="/xml.txt" outputMimeType="application/xml; externalentities=false; indexedreader=false"/>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="578e595e-4ea1-4a79-a360-b3d121a6deaf" variableName="fullSftp" />
+		<ee:transform doc:name="Transform Message" doc:id="1804c442-dd32-4a0a-85f6-e04bebe47f17">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.users.*user map {
+    id: $.@userId,
+    email: $.email,
+    firstName: $.firstName,
+    name: $.name
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="0730b45a-9037-4571-88fb-bae0fbada358" />
+	</flow>
+</mule>
